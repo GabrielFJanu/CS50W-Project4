@@ -19,7 +19,7 @@ class Post(models.Model):
     def __str__(self):
         return f'"{self.content[:50]}..." by {self.poster}'
 
-class Likes(models.Model):
+class Like(models.Model):
     #post
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")
     #liker

@@ -1,5 +1,32 @@
 {% extends "network/layout.html" %}
+{% load static %}
 
 {% block body %}
-    TODO
+    
+    {% if user.is_authenticated %}
+        <div class="card m-4">
+            <div class="card-body">
+                <h3 class="card-title">New Post</h3>
+
+                <!-- Não usarei ModelForm por ser overkill -->
+                <form id="new-post-form">
+                    <div class="form-group">
+                        <textarea 
+                            class="form-control" 
+                            id="new-post-content" 
+                            rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Post
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'network/index.js' %}"></script>
 {% endblock %}
