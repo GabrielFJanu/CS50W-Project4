@@ -1,12 +1,35 @@
+import json
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
-from .models import User
+from .models import User, Post
+
+# APIs
+
+def posts(request):
+    if request.method == "POST":
+        
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Login required."}, status=403)
+        
+        data = json.loads(request.body)
+        content = data.get("content", "").strip()
+
+        if not content:
+            return JsonResponse({"error": "Content cannot be empty."}, status=400)
+
+        if len(content) > 280:
+            return JsonResponse({"error": "Post cannot exceed 280 characters."}, status=400)
+
+        Post.objects.create(content=content, poster=request.user)
+
+        return JsonResponse({"message": "Post created successfully."}, status=201)
 
 
+# renders
 def index(request):
     return render(request, "network/index.html")
 

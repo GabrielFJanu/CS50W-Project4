@@ -4,17 +4,21 @@
 {% block body %}
     
     {% if user.is_authenticated %}
+        <!-- New Post -->
         <div class="card m-4">
             <div class="card-body">
                 <h3 class="card-title">New Post</h3>
 
-                <!-- Não usarei ModelForm por ser overkill -->
+                <!-- Form -->
                 <form id="new-post-form">
                     <div class="form-group">
                         <textarea 
                             class="form-control" 
                             id="new-post-content" 
-                            rows="3"></textarea>
+                            rows="3"
+                            maxlength="280"></textarea>
+                        
+                        <div id="new-post-error" class="text-danger mt-1"></div>
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="new-post-submit-button">
