@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.text import Truncator
 
 
 class User(AbstractUser):
@@ -17,7 +18,16 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True) #preenchido automaticamente quando salvo
 
     def __str__(self):
-        return f'"{self.content[:50]}..." by {self.poster}'
+        return f'"{Truncator(self.content).chars(50)}" by {self.poster}'
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "content": self.content,
+            "poster": self.poster.username,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
 
 class Like(models.Model):
     #post

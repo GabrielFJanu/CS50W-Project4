@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block body %}
+
+    <h1 class="m-2" >All Posts</h1>
     
     {% if user.is_authenticated %}
         <!-- New Post -->
@@ -28,6 +30,12 @@
             </div>
         </div>
     {% endif %}
+    
+    <!-- Posts -->
+    <div id="posts"></div>
+    
+    <!-- Pagination -->
+    <div id="pagination" class="m-4"></div>
 
 {% endblock %}
 

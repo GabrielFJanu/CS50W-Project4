@@ -4,13 +4,31 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.core.paginator import Paginator
 
 from .models import User, Post
 
 # APIs
 
 def posts(request):
-    if request.method == "POST":
+    if request.method == "GET":
+        posts = Post.objects.all().order_by("-created_at")
+        paginator = Paginator(posts, 10)
+
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        data = {
+            "page": page_obj.number,
+            "has_next": page_obj.has_next(),
+            "has_previous": page_obj.has_previous(),
+            "num_pages": paginator.num_pages,
+            "posts": [post.serialize() for post in page_obj]
+        }
+
+        return JsonResponse(data, status=200)
+    
+    elif request.method == "POST":
         
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Login required."}, status=403)
