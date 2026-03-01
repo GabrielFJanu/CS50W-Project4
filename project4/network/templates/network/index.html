@@ -3,15 +3,14 @@
 
 {% block body %}
 
-    <h1 class="m-2" >All Posts</h1>
-    
-    {% if user.is_authenticated %}
+    <!-- All posts -->
+     <div id="all-posts-view">
+        <h1 class="m-2" >All Posts</h1>
+        {% if user.is_authenticated %}
         <!-- New Post -->
         <div class="card m-4">
             <div class="card-body">
                 <h3 class="card-title">New Post</h3>
-
-                <!-- Form -->
                 <form id="new-post-form">
                     <div class="form-group">
                         <textarea 
@@ -19,23 +18,36 @@
                             id="new-post-content" 
                             rows="3"
                             maxlength="280"></textarea>
-                        
                         <div id="new-post-error" class="text-danger mt-1"></div>
                     </div>
-
                     <button type="submit" class="btn btn-primary" id="new-post-submit-button">
                         Post
                     </button>
                 </form>
             </div>
         </div>
-    {% endif %}
-    
-    <!-- Posts -->
-    <div id="posts"></div>
-    
-    <!-- Pagination -->
-    <div id="pagination" class="m-4"></div>
+        {% endif %}
+        <!-- Feed -->
+        <div class="feed">
+            <!-- Posts list -->
+            <div class="posts-list"></div>
+            <!-- Feed pagination -->
+            <div class="feed-pagination"></div>
+        </div>
+     </div>
+
+    <!-- Profile page -->
+     <div id="profile-page-view">
+        <!-- Profile info header -->
+        <div id="profile-info-header"></div>
+        <!-- Feed -->
+        <div class="feed">
+            <!-- Posts list -->
+            <div class="posts-list"></div>
+            <!-- Feed pagination -->
+            <div class="feed-pagination"></div>
+        </div>
+     </div>
 
 {% endblock %}
 

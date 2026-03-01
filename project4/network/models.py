@@ -6,6 +6,14 @@ from django.utils.text import Truncator
 class User(AbstractUser):
     #following
     following = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="followers") #symmetrical = False, indica que A segue B não implica necessáriamente que B segue A. Como se autoreferencia, então por default symmetrical=True, o que levaria related_name perder seu sentido.
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "following": self.following.count(),
+            "followers": self.followers.count(),
+        }
 
 class Post(models.Model):
     #content

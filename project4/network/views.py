@@ -10,9 +10,23 @@ from django.views.decorators.http import require_http_methods
 from .models import User, Post
 
 # APIs
+@require_http_methods(["GET"])
+def user_profile(request, username):
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found."}, status=404)
+    
+    data = user.serialize()
+    data["is_followed"] = request.user.is_authenticated and request.user.following.filter(pk=user.id).exists()
+    data["is_me"] = request.user.is_authenticated and user == request.user
+
+    return JsonResponse(data, status=200)
+
 
 @require_http_methods(["PUT"])
-def like_post(request, post_id):
+def toggle_like(request, post_id):
 
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Login required."}, status=403)
@@ -38,7 +52,14 @@ def like_post(request, post_id):
 @require_http_methods(["GET","POST"])
 def posts(request):
     if request.method == "GET":
-        posts = Post.objects.all().order_by("-created_at")
+
+        username = request.GET.get("username")
+
+        if username:
+            posts = Post.objects.filter(poster__username=username).order_by("-created_at")
+        else:
+            posts = Post.objects.all().order_by("-created_at")
+
         paginator = Paginator(posts, 10)
 
         page_number = request.GET.get("page")

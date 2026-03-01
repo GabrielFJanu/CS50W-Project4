@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 newPostContent.value = '';
                 newPostError.innerHTML = '';
                 console.log(jsonResponse.message);
-                load_post_page(1); //após sucesso do fetch, carrega página com o novo post
+                load_all_posts(); //após sucesso do fetch, carrega página com o novo post
             })
             .catch(error => {
                 newPostError.textContent = error.message; //mensagem de erro aparece
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     //começa mostrando a primeira página
-    load_post_page(1);
+    load_all_posts();
 });
 
 function getCookie(name) {
@@ -67,13 +67,14 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function load_post_page(page) {
-    const postsDiv = document.querySelector('#posts');
-    const paginationDiv = document.querySelector('#pagination')
-    postsDiv.innerHTML = '';
-    paginationDiv.innerHTML = '';
+function load_feed(feed, page, username = '') {
 
-    fetch(`/posts?page=${page}`)
+    const postsList = feed.querySelector('.posts-list');
+    const feedPagination = feed.querySelector('.feed-pagination')
+    postsList.innerHTML = '';
+    feedPagination.innerHTML = '';
+
+    fetch(`/posts?page=${page}&username=${username}`)
     .then(response => {
         if (!response.ok) {
             throw new Error("Failed to load posts");
@@ -90,9 +91,9 @@ function load_post_page(page) {
             const cardBody = document.createElement("div");
             cardBody.className = "card-body";
 
-            const username = document.createElement("h6");
-            username.className = "card-title mb-2";
-            username.textContent = `@${post.poster}`;
+            const usernameEl = document.createElement("h6");
+            usernameEl.className = "card-title mb-2";
+            usernameEl.textContent = `@${post.poster}`;
 
             const content = document.createElement("p");
             content.className = "card-text my-2";
@@ -113,16 +114,16 @@ function load_post_page(page) {
             likeContainer.className = "d-flex align-items-center";
 
             // Coração
-            const heart = document.createElement("span");
-            heart.className = "like-heart";
-            heart.style.cursor = "pointer";
-            heart.style.fontSize = "1.4rem";
-            heart.style.userSelect = "none";
-            heart.style.color = post.is_liked ? "#ed4956" : "#979797";
-            heart.textContent = post.is_liked ? "♥" : "♡";
+            const likeHeart = document.createElement("span");
+            likeHeart.className = "like-heart";
+            likeHeart.style.cursor = "pointer";
+            likeHeart.style.fontSize = "1.4rem";
+            likeHeart.style.userSelect = "none";
+            likeHeart.style.color = post.is_liked ? "#ed4956" : "#979797";
+            likeHeart.textContent = post.is_liked ? "♥" : "♡";
 
-            heart.onclick = () => {
-                fetch(`/posts/${post.id}/like`, {
+            likeHeart.onclick = () => {
+                fetch(`/posts/${post.id}/toggle_like`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
@@ -142,9 +143,9 @@ function load_post_page(page) {
                 })
                 .then(data => {
                     post.is_liked = data.is_liked;
-                    heart.style.color = data.is_liked ? "#ed4956" : "#979797";
-                    heart.textContent = data.is_liked ? "♥" : "♡";
-                    heart.parentElement.querySelector('.like-count').textContent = data.likes;
+                    likeHeart.style.color = data.is_liked ? "#ed4956" : "#979797";
+                    likeHeart.textContent = data.is_liked ? "♥" : "♡";
+                    likeHeart.parentElement.querySelector('.like-count').textContent = data.likes;
                 })
                 .catch(error => {
                     console.error(error);
@@ -157,10 +158,10 @@ function load_post_page(page) {
             likeCount.style.fontWeight = "500";
             likeCount.textContent = post.likes;
 
-            likeContainer.append(heart, likeCount);
+            likeContainer.append(likeHeart, likeCount);
 
             cardBody.append(
-                username,
+                usernameEl,
                 content,
                 date,
                 likeContainer,
@@ -168,7 +169,7 @@ function load_post_page(page) {
 
             postCard.append(cardBody);
 
-            postsDiv.append(postCard);
+            postsList.append(postCard);
         });
 
         //pagination
@@ -188,7 +189,7 @@ function load_post_page(page) {
         prevButton.textContent = "Previous";
 
         prevButton.onclick = () => {
-            load_post_page(data.page - 1);
+            load_feed(feed, data.page - 1, username);
         };
 
         prevLi.append(prevButton);
@@ -206,7 +207,7 @@ function load_post_page(page) {
             button.textContent = i;
 
             button.onclick = () => {
-                load_post_page(i);
+                load_feed(feed, i, username);
             };
 
             li.append(button);
@@ -223,14 +224,88 @@ function load_post_page(page) {
         nextButton.textContent = "Next";
 
         nextButton.onclick = () => {
-            load_post_page(data.page + 1);
+            load_feed(feed, data.page + 1, username);
         };
 
         nextLi.append(nextButton);
         ul.append(nextLi);
 
         nav.append(ul);
-        paginationDiv.append(nav);
+        feedPagination.append(nav);
+    })
+    .catch(error => console.error(error));
+}
+
+function load_all_posts() {
+    document.querySelector('#profile-page-view').style.display = 'none';
+
+    const view = document.querySelector('#all-posts-view');
+    view.style.display = 'block';
+
+    const feed = view.querySelector('.feed');
+    load_feed(feed, 1);
+}
+
+function load_profile_page(username) {
+  document.querySelector('#all-posts-view').style.display = 'none';
+
+  const view = document.querySelector('#profile-page-view');
+  view.style.display = 'block';
+  const feed = view.querySelector('.feed');
+
+  fetch(`/users/${username}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Failed to load profile page");
+      }
+      return response.json();
+    })
+    .then(data => {
+      const header = view.querySelector('#profile-info-header');
+      header.innerHTML = '';
+
+      const container = document.createElement('div');
+      container.className = 'card m-2';
+
+      container.innerHTML = `
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <h2 class="card-title font-weight-bold mb-1" id="profile-username"></h2>
+            <div class="d-flex text-muted">
+              <div class="mr-4">
+                <span class="font-weight-bold text-dark" id="following-count"></span> Following
+              </div>
+              <div>
+                <span class="font-weight-bold text-dark" id="follower-count"></span> Followers
+              </div>
+            </div>
+          </div>
+          <div id="follow-button-container"></div>
+        </div>
+      `;
+
+      container.querySelector('#profile-username').textContent = `@${data.username}`;
+      container.querySelector('#following-count').textContent = data.following;
+      container.querySelector('#follower-count').textContent = data.followers;
+
+      header.append(container);
+
+      if (!data.is_me) {
+        const btn = document.createElement('button');
+        btn.className = data.is_followed
+          ? 'btn btn-outline-secondary px-4'
+          : 'btn btn-primary px-4';
+
+        btn.textContent = data.is_followed ? 'Unfollow' : 'Follow';
+
+        btn.onclick = () => {
+          // TODO: implementar toggleFollow aqui
+        };
+
+        container.querySelector('#follow-button-container').append(btn);
+      }
+
+      load_feed(feed, 1, data.username);
     })
     .catch(error => console.error(error));
 }
