@@ -10,5 +10,6 @@ urlpatterns = [
     path("logout", views.logout_view, name="logout"),
     path("register", views.register, name="register"),
     #APIs
-    path("posts", views.posts, name="posts")
+    path("posts", views.posts, name="posts"),
+    path("posts/<int:post_id>/like", views.like_post, name="like_post"),
 ]

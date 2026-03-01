@@ -5,11 +5,37 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.core.paginator import Paginator
+from django.views.decorators.http import require_http_methods
 
 from .models import User, Post
 
 # APIs
 
+@require_http_methods(["PUT"])
+def like_post(request, post_id):
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Login required."}, status=403)
+
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({"error": "Post not found."}, status=404)
+
+    data = json.loads(request.body)
+    like = data.get("like")
+
+    if like:
+        post.likes.add(request.user)
+    else:
+        post.likes.remove(request.user)
+
+    return JsonResponse({
+        "likes": post.likes.count(),
+        "is_liked": post.likes.filter(id=request.user.id).exists()
+    }, status=200)
+
+@require_http_methods(["GET","POST"])
 def posts(request):
     if request.method == "GET":
         posts = Post.objects.all().order_by("-created_at")
@@ -18,12 +44,18 @@ def posts(request):
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
+        posts_data = []
+        for post in page_obj:
+            p = post.serialize()
+            p["is_liked"] = request.user.is_authenticated and post.likes.filter(id=request.user.id).exists()
+            posts_data.append(p)
+
         data = {
             "page": page_obj.number,
             "has_next": page_obj.has_next(),
             "has_previous": page_obj.has_previous(),
             "num_pages": paginator.num_pages,
-            "posts": [post.serialize() for post in page_obj]
+            "posts": posts_data,
         }
 
         return JsonResponse(data, status=200)

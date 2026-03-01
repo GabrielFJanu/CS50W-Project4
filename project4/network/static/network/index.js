@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify({
-                    content: newPostContent.value,
+                    content: newPostContent.value.trim(),
                 })
             })
             .then(response => {
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 load_post_page(1); //após sucesso do fetch, carrega página com o novo post
             })
             .catch(error => {
-                newPostError.innerHTML = error.message; //mensagem de erro aparece
+                newPostError.textContent = error.message; //mensagem de erro aparece
                 newPostSubmitButton.disabled = false; //torna submit button abled para o usuário editar ou reenviar o form
             });
         };
@@ -92,7 +92,7 @@ function load_post_page(page) {
 
             const username = document.createElement("h6");
             username.className = "card-title mb-2";
-            username.textContent = post.poster;
+            username.textContent = `@${post.poster}`;
 
             const content = document.createElement("p");
             content.className = "card-text my-2";
@@ -109,15 +109,61 @@ function load_post_page(page) {
                     minute: "2-digit"
                 });
 
-            const likes = document.createElement("div");
-            likes.className = "card-link";
-            likes.innerHTML = `♥️ ${0}`;
+            const likeContainer = document.createElement("div");
+            likeContainer.className = "d-flex align-items-center";
+
+            // Coração
+            const heart = document.createElement("span");
+            heart.className = "like-heart";
+            heart.style.cursor = "pointer";
+            heart.style.fontSize = "1.4rem";
+            heart.style.userSelect = "none";
+            heart.style.color = post.is_liked ? "#ed4956" : "#979797";
+            heart.textContent = post.is_liked ? "♥" : "♡";
+
+            heart.onclick = () => {
+                fetch(`/posts/${post.id}/like`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({
+                        like: !post.is_liked
+                    })
+                })
+                .then(response => {
+                    return response.json().then(json => {
+                        if (!response.ok){
+                            throw new Error(json.error);
+                        }
+                        return json;
+                    });
+                })
+                .then(data => {
+                    post.is_liked = data.is_liked;
+                    heart.style.color = data.is_liked ? "#ed4956" : "#979797";
+                    heart.textContent = data.is_liked ? "♥" : "♡";
+                    heart.parentElement.querySelector('.like-count').textContent = data.likes;
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+            };
+
+            // Contador
+            const likeCount = document.createElement("span");
+            likeCount.className = "like-count ml-1";
+            likeCount.style.fontWeight = "500";
+            likeCount.textContent = post.likes;
+
+            likeContainer.append(heart, likeCount);
 
             cardBody.append(
                 username,
                 content,
                 date,
-                likes
+                likeContainer,
             );
 
             postCard.append(cardBody);
