@@ -92,8 +92,12 @@ function load_feed(feed, page, username = '') {
             cardBody.className = "card-body";
 
             const usernameEl = document.createElement("h6");
-            usernameEl.className = "card-title mb-2";
+            usernameEl.className = "card-title mb-2 font-weight-bold";
             usernameEl.textContent = `@${post.poster}`;
+            usernameEl.style.cursor = "pointer";
+            usernameEl.onclick = () => {
+                load_profile_page(post.poster);
+            };
 
             const content = document.createElement("p");
             content.className = "card-text my-2";
@@ -128,10 +132,7 @@ function load_feed(feed, page, username = '') {
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRFToken": getCookie("csrftoken")
-                    },
-                    body: JSON.stringify({
-                        like: !post.is_liked
-                    })
+                    }
                 })
                 .then(response => {
                     return response.json().then(json => {
@@ -299,7 +300,32 @@ function load_profile_page(username) {
         btn.textContent = data.is_followed ? 'Unfollow' : 'Follow';
 
         btn.onclick = () => {
-          // TODO: implementar toggleFollow aqui
+            fetch(`/users/${username}/toggle_follow`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                }
+            })
+            .then(response => {
+                return response.json().then(json => {
+                    if (!response.ok){
+                        throw new Error(json.error);
+                    }
+                    return json;
+                });
+            })
+            .then(toggleData => {
+                container.querySelector('#following-count').textContent = toggleData.following;
+                container.querySelector('#follower-count').textContent = toggleData.followers;
+                btn.className = toggleData.is_followed
+                ? 'btn btn-outline-secondary px-4'
+                : 'btn btn-primary px-4';
+                btn.textContent = toggleData.is_followed ? 'Unfollow' : 'Follow';
+            })
+            .catch(error => {
+                console.error(error);
+            });
         };
 
         container.querySelector('#follow-button-container').append(btn);

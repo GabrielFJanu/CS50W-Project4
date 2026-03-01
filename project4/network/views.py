@@ -10,6 +10,35 @@ from django.views.decorators.http import require_http_methods
 from .models import User, Post
 
 # APIs
+@require_http_methods(["PUT"])
+def toggle_follow(request, username):
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Login required."}, status=403)
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found."}, status=404)
+    
+    if user == request.user:
+        return JsonResponse({"error": "You cannot follow yourself."}, status=400)
+    
+    already_followed = request.user.following.filter(id=user.id).exists()
+
+    if already_followed:
+        request.user.following.remove(user)
+        is_followed = False
+    else:
+        request.user.following.add(user)
+        is_followed = True
+
+    response = user.serialize()
+    response["is_followed"] = is_followed
+
+    return JsonResponse(response, status=200)
+
+
 @require_http_methods(["GET"])
 def user_profile(request, username):
 
@@ -18,11 +47,11 @@ def user_profile(request, username):
     except User.DoesNotExist:
         return JsonResponse({"error": "User not found."}, status=404)
     
-    data = user.serialize()
-    data["is_followed"] = request.user.is_authenticated and request.user.following.filter(pk=user.id).exists()
-    data["is_me"] = request.user.is_authenticated and user == request.user
+    response = user.serialize()
+    response["is_followed"] = request.user.is_authenticated and request.user.following.filter(pk=user.id).exists()
+    response["is_me"] = request.user.is_authenticated and user == request.user
 
-    return JsonResponse(data, status=200)
+    return JsonResponse(response, status=200)
 
 
 @require_http_methods(["PUT"])
@@ -36,17 +65,18 @@ def toggle_like(request, post_id):
     except Post.DoesNotExist:
         return JsonResponse({"error": "Post not found."}, status=404)
 
-    data = json.loads(request.body)
-    like = data.get("like")
+    already_liked = post.likes.filter(id=request.user.id).exists()
 
-    if like:
-        post.likes.add(request.user)
-    else:
+    if already_liked:
         post.likes.remove(request.user)
+        is_liked = False
+    else:
+        post.likes.add(request.user)
+        is_liked = True
 
     return JsonResponse({
         "likes": post.likes.count(),
-        "is_liked": post.likes.filter(id=request.user.id).exists()
+        "is_liked": is_liked
     }, status=200)
 
 @require_http_methods(["GET","POST"])
@@ -71,7 +101,7 @@ def posts(request):
             p["is_liked"] = request.user.is_authenticated and post.likes.filter(id=request.user.id).exists()
             posts_data.append(p)
 
-        data = {
+        response = {
             "page": page_obj.number,
             "has_next": page_obj.has_next(),
             "has_previous": page_obj.has_previous(),
@@ -79,15 +109,19 @@ def posts(request):
             "posts": posts_data,
         }
 
-        return JsonResponse(data, status=200)
+        return JsonResponse(response, status=200)
     
     elif request.method == "POST":
         
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Login required."}, status=403)
         
-        data = json.loads(request.body)
-        content = data.get("content", "").strip()
+        try:
+            body = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON."}, status=400)
+        
+        content = body.get("content", "").strip()
 
         if not content:
             return JsonResponse({"error": "Content cannot be empty."}, status=400)
