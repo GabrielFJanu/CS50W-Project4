@@ -1,21 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const newPostForm = document.querySelector('#new-post-form')
-    
-    if (newPostForm){ //usuário logado
+    const newPostForm = document.querySelector('#new-post-form');
 
-        const newPostContent = newPostForm.querySelector('#new-post-content')
-        const newPostSubmitButton = newPostForm.querySelector('#new-post-submit-button')
-        const newPostError = newPostForm.querySelector('#new-post-error')
+    if (newPostForm) { // usuário logado
+        const newPostContent = newPostForm.querySelector('#new-post-content');
+        const newPostSubmitButton = newPostForm.querySelector('#new-post-submit-button');
+        const newPostError = newPostForm.querySelector('#new-post-error');
 
-        newPostSubmitButton.disabled = true; //inicia com submit button disabled
+        newPostSubmitButton.disabled = true; // inicia com submit button disabled
 
         newPostContent.oninput = () => {
-            newPostSubmitButton.disabled = !newPostContent.value.trim(); //se content.trim() vazio = submit button disabled
+            // se content vazio = submit button disabled
+            newPostSubmitButton.disabled = !newPostContent.value.trim();
         };
 
         newPostForm.onsubmit = event => {
-            event.preventDefault(); //evita recarregar página
-            newPostSubmitButton.disabled = true; //torna submit button disabled para evitar mais clicks
+            event.preventDefault(); // evita recarregar página
+            newPostSubmitButton.disabled = true; // desabilita para evitar múltiplos cliques
 
             fetch('/posts', {
                 method: 'POST',
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(response => {
                 return response.json().then(json => {
-                    if (!response.ok){
+                    if (!response.ok) {
                         throw new Error(json.error);
                     }
                     return json;
@@ -39,19 +39,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 newPostContent.value = '';
                 newPostError.innerHTML = '';
                 console.log(jsonResponse.message);
-                load_all_posts(); //após sucesso do fetch, carrega página com o novo post
+                loadAllPosts(); // após sucesso, recarrega a página com o novo post
             })
             .catch(error => {
-                newPostError.textContent = error.message; //mensagem de erro aparece
-                newPostSubmitButton.disabled = false; //torna submit button abled para o usuário editar ou reenviar o form
+                newPostError.textContent = error.message; // exibe mensagem de erro
+                newPostSubmitButton.disabled = false; // reabilita para o usuário editar ou reenviar
             });
         };
     }
 
-    //começa mostrando a primeira página
-    load_all_posts();
+    // começa mostrando a primeira página (All Posts)
+    loadAllPosts();
 });
 
+// Função para obter o CSRF Token do Django
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -67,10 +68,20 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function load_feed(feed, page, username = '') {
+// Helpers simples para mostrar/esconder views via CSS (.hidden)
+function showView(selector) {
+    document.querySelector(selector).classList.remove('hidden');
+}
 
+function hideView(selector) {
+    document.querySelector(selector).classList.add('hidden');
+}
+
+// Carrega o feed de posts (para All Posts ou Profile)
+function loadFeed(feed, page, username = '') {
     const postsList = feed.querySelector('.posts-list');
-    const feedPagination = feed.querySelector('.feed-pagination')
+    const feedPagination = feed.querySelector('.feed-pagination');
+
     postsList.innerHTML = '';
     feedPagination.innerHTML = '';
 
@@ -82,29 +93,27 @@ function load_feed(feed, page, username = '') {
         return response.json();
     })
     .then(data => {
-        //posts
+        // Renderiza os posts
         data.posts.forEach(post => {
-            
             const postCard = document.createElement("div");
-            postCard.className = "card m-4"; // Mantendo a margem externa
+            postCard.className = "card post-card";
 
             const cardBody = document.createElement("div");
             cardBody.className = "card-body";
 
-            const usernameEl = document.createElement("h6");
-            usernameEl.className = "card-title mb-2 font-weight-bold";
+            const usernameEl = document.createElement("button");
+            usernameEl.type = "button";
+            usernameEl.className = "card-title h5 mb-2 post-username-button";
             usernameEl.textContent = `@${post.poster}`;
-            usernameEl.style.cursor = "pointer";
-            usernameEl.onclick = () => {
-                load_profile_page(post.poster);
-            };
+            usernameEl.onclick = () => loadProfilePage(post.poster);
 
             const content = document.createElement("p");
             content.className = "card-text my-2";
             content.textContent = post.content;
 
-            const date = document.createElement("small");
-            date.className = "text-muted d-block mb-2";
+            const date = document.createElement("time");
+            date.className = "text-muted d-block mb-2 small";
+            date.dateTime = post.created_at;
             date.textContent = new Date(post.created_at)
                 .toLocaleString("en-US", {
                     month: "long",
@@ -117,16 +126,12 @@ function load_feed(feed, page, username = '') {
             const likeContainer = document.createElement("div");
             likeContainer.className = "d-flex align-items-center";
 
-            // Coração
-            const likeHeart = document.createElement("span");
-            likeHeart.className = "like-heart";
-            likeHeart.style.cursor = "pointer";
-            likeHeart.style.fontSize = "1.4rem";
-            likeHeart.style.userSelect = "none";
-            likeHeart.style.color = post.is_liked ? "#ed4956" : "#979797";
-            likeHeart.textContent = post.is_liked ? "♥" : "♡";
+            // Ícone de Coração
+            const likeButton = document.createElement("button");
+            likeButton.className = `btn btn-link p-0 text-decoration-none like-heart ${post.is_liked ? 'liked' : ''}`;
+            likeButton.textContent = post.is_liked ? "♥" : "♡";
 
-            likeHeart.onclick = () => {
+            likeButton.onclick = () => {
                 fetch(`/posts/${post.id}/toggle_like`, {
                     method: "PUT",
                     headers: {
@@ -136,7 +141,7 @@ function load_feed(feed, page, username = '') {
                 })
                 .then(response => {
                     return response.json().then(json => {
-                        if (!response.ok){
+                        if (!response.ok) {
                             throw new Error(json.error);
                         }
                         return json;
@@ -144,43 +149,32 @@ function load_feed(feed, page, username = '') {
                 })
                 .then(data => {
                     post.is_liked = data.is_liked;
-                    likeHeart.style.color = data.is_liked ? "#ed4956" : "#979797";
-                    likeHeart.textContent = data.is_liked ? "♥" : "♡";
-                    likeHeart.parentElement.querySelector('.like-count').textContent = data.likes;
+                    likeButton.classList.toggle('liked', data.is_liked);
+                    likeButton.textContent = data.is_liked ? "♥" : "♡";
+                    likeButton.parentElement.querySelector('.like-count').textContent = data.likes;
                 })
-                .catch(error => {
-                    console.error(error);
-                });
+                .catch(error => console.error(error));
             };
 
-            // Contador
+            // Contador de Curtidas
             const likeCount = document.createElement("span");
-            likeCount.className = "like-count ml-1";
-            likeCount.style.fontWeight = "500";
+            likeCount.className = "like-count";
             likeCount.textContent = post.likes;
 
-            likeContainer.append(likeHeart, likeCount);
-
-            cardBody.append(
-                usernameEl,
-                content,
-                date,
-                likeContainer,
-            );
-
+            likeContainer.append(likeButton, likeCount);
+            cardBody.append(usernameEl, content, date, likeContainer);
             postCard.append(cardBody);
-
             postsList.append(postCard);
         });
 
-        //pagination
+        // Renderiza a Paginação
         const nav = document.createElement("nav");
         nav.setAttribute("aria-label", "Page navigation");
 
         const ul = document.createElement("ul");
         ul.className = "pagination justify-content-center";
 
-        // Previous
+        // Botão Previous
         const prevLi = document.createElement("li");
         prevLi.className = `page-item ${!data.has_previous ? "disabled" : ""}`;
 
@@ -188,17 +182,16 @@ function load_feed(feed, page, username = '') {
         prevButton.className = "page-link";
         prevButton.type = "button";
         prevButton.textContent = "Previous";
-
-        prevButton.onclick = () => {
-            load_feed(feed, data.page - 1, username);
-        };
+        prevButton.disabled = !data.has_previous;
+        if (data.has_previous) {
+            prevButton.onclick = () => loadFeed(feed, data.page - 1, username);
+        }
 
         prevLi.append(prevButton);
         ul.append(prevLi);
 
-        // Page numbers
+        // Números das Páginas
         for (let i = 1; i <= data.num_pages; i++) {
-
             const li = document.createElement("li");
             li.className = `page-item ${i === data.page ? "active" : ""}`;
 
@@ -206,16 +199,13 @@ function load_feed(feed, page, username = '') {
             button.className = "page-link";
             button.type = "button";
             button.textContent = i;
-
-            button.onclick = () => {
-                load_feed(feed, i, username);
-            };
+            button.onclick = () => loadFeed(feed, i, username);
 
             li.append(button);
             ul.append(li);
         }
 
-        // Next
+        // Botão Next
         const nextLi = document.createElement("li");
         nextLi.className = `page-item ${!data.has_next ? "disabled" : ""}`;
 
@@ -223,10 +213,10 @@ function load_feed(feed, page, username = '') {
         nextButton.className = "page-link";
         nextButton.type = "button";
         nextButton.textContent = "Next";
-
-        nextButton.onclick = () => {
-            load_feed(feed, data.page + 1, username);
-        };
+        nextButton.disabled = !data.has_next;
+        if (data.has_next) {
+            nextButton.onclick = () => loadFeed(feed, data.page + 1, username);
+        }
 
         nextLi.append(nextButton);
         ul.append(nextLi);
@@ -237,101 +227,101 @@ function load_feed(feed, page, username = '') {
     .catch(error => console.error(error));
 }
 
-function load_all_posts() {
-    document.querySelector('#profile-page-view').style.display = 'none';
+// Carrega a view de "All Posts"
+function loadAllPosts() {
+    hideView('#profile-page-view');
+    showView('#all-posts-view');
 
     const view = document.querySelector('#all-posts-view');
-    view.style.display = 'block';
-
     const feed = view.querySelector('.feed');
-    load_feed(feed, 1);
+    loadFeed(feed, 1);
 }
 
-function load_profile_page(username) {
-  document.querySelector('#all-posts-view').style.display = 'none';
+// Carrega a view de Perfil do Usuário
+function loadProfilePage(username) {
+    hideView('#all-posts-view');
+    showView('#profile-page-view');
 
-  const view = document.querySelector('#profile-page-view');
-  view.style.display = 'block';
-  const feed = view.querySelector('.feed');
+    const view = document.querySelector('#profile-page-view');
+    const feed = view.querySelector('.feed');
 
-  fetch(`/users/${username}`)
+    fetch(`/users/${username}`)
     .then(response => {
-      if (!response.ok) {
-        throw new Error("Failed to load profile page");
-      }
-      return response.json();
+        if (!response.ok) {
+            throw new Error("Failed to load profile page");
+        }
+        return response.json();
     })
     .then(data => {
-      const header = view.querySelector('#profile-info-header');
-      header.innerHTML = '';
+        const header = view.querySelector('#profile-info-header');
+        header.innerHTML = '';
 
-      const container = document.createElement('div');
-      container.className = 'card m-2';
+        const container = document.createElement('div');
+        container.className = 'card profile-card';
 
-      container.innerHTML = `
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <h2 class="card-title font-weight-bold mb-1" id="profile-username"></h2>
-            <div class="d-flex text-muted">
-              <div class="mr-4">
-                <span class="font-weight-bold text-dark" id="following-count"></span> Following
-              </div>
-              <div>
-                <span class="font-weight-bold text-dark" id="follower-count"></span> Followers
-              </div>
+        container.innerHTML = `
+            <div class="card-body profile-header">
+                <div>
+                    <h2 class="card-title mb-1 profile-username" id="profile-username"></h2>
+                    <div class="profile-stats text-muted">
+                        <div class="profile-stat">
+                            <span class="profile-stat-number" id="following-count"></span> Following
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-stat-number" id="follower-count"></span> Followers
+                        </div>
+                    </div>
+                </div>
+                <div id="follow-button-container"></div>
             </div>
-          </div>
-          <div id="follow-button-container"></div>
-        </div>
-      `;
+        `;
 
-      container.querySelector('#profile-username').textContent = `@${data.username}`;
-      container.querySelector('#following-count').textContent = data.following;
-      container.querySelector('#follower-count').textContent = data.followers;
+        container.querySelector('#profile-username').textContent = `@${data.username}`;
+        container.querySelector('#following-count').textContent = data.following;
+        container.querySelector('#follower-count').textContent = data.followers;
 
-      header.append(container);
+        header.append(container);
 
-      if (!data.is_me) {
-        const btn = document.createElement('button');
-        btn.className = data.is_followed
-          ? 'btn btn-outline-secondary px-4'
-          : 'btn btn-primary px-4';
-
-        btn.textContent = data.is_followed ? 'Unfollow' : 'Follow';
-
-        btn.onclick = () => {
-            fetch(`/users/${username}/toggle_follow`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie("csrftoken")
-                }
-            })
-            .then(response => {
-                return response.json().then(json => {
-                    if (!response.ok){
-                        throw new Error(json.error);
-                    }
-                    return json;
-                });
-            })
-            .then(toggleData => {
-                container.querySelector('#following-count').textContent = toggleData.following;
-                container.querySelector('#follower-count').textContent = toggleData.followers;
-                btn.className = toggleData.is_followed
+        // Lógica de Follow/Unfollow (somente se não for o próprio usuário)
+        if (!data.is_me) {
+            const btn = document.createElement('button');
+            btn.className = data.is_followed
                 ? 'btn btn-outline-secondary px-4'
                 : 'btn btn-primary px-4';
-                btn.textContent = toggleData.is_followed ? 'Unfollow' : 'Follow';
-            })
-            .catch(error => {
-                console.error(error);
-            });
-        };
+            btn.textContent = data.is_followed ? 'Unfollow' : 'Follow';
 
-        container.querySelector('#follow-button-container').append(btn);
-      }
+            btn.onclick = () => {
+                fetch(`/users/${username}/toggle_follow`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    }
+                })
+                .then(response => {
+                    return response.json().then(json => {
+                        if (!response.ok) {
+                            throw new Error(json.error);
+                        }
+                        return json;
+                    });
+                })
+                .then(toggleData => {
+                    container.querySelector('#following-count').textContent = toggleData.following;
+                    container.querySelector('#follower-count').textContent = toggleData.followers;
 
-      load_feed(feed, 1, data.username);
+                    btn.className = toggleData.is_followed
+                        ? 'btn btn-outline-secondary px-4'
+                        : 'btn btn-primary px-4';
+                    btn.textContent = toggleData.is_followed ? 'Unfollow' : 'Follow';
+                })
+                .catch(error => console.error(error));
+            };
+
+            container.querySelector('#follow-button-container').append(btn);
+        }
+
+        loadFeed(feed, 1, data.username);
     })
     .catch(error => console.error(error));
 }

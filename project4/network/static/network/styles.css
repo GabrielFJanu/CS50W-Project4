@@ -1,0 +1,62 @@
+.hidden {
+  display: none;
+}
+
+.post-card {
+  margin: 1.5rem;
+}
+
+.post-username {
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-username:hover {
+  text-decoration: none;
+  color: inherit;
+}
+
+.like-heart {
+  font-size: 1.4rem;
+  color: #979797;
+  line-height: 1;
+}
+
+.like-heart.liked {
+  color: #ed4956;
+}
+
+.like-count {
+  font-weight: 500;
+  margin-left: 0.25rem;
+}
+
+.profile-card {
+  margin: 0.75rem;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.profile-stat-number {
+  font-weight: 600;
+  color: #212529;
+}
+
+.post-username-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
