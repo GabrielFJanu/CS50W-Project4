@@ -6,16 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPostSubmitButton = newPostForm.querySelector('#new-post-submit-button');
         const newPostError = newPostForm.querySelector('#new-post-error');
 
-        newPostSubmitButton.disabled = true; // inicia com submit button disabled
+        newPostSubmitButton.disabled = true;
 
         newPostContent.oninput = () => {
-            // se content vazio = submit button disabled
             newPostSubmitButton.disabled = !newPostContent.value.trim();
         };
 
         newPostForm.onsubmit = event => {
-            event.preventDefault(); // evita recarregar página
-            newPostSubmitButton.disabled = true; // desabilita para evitar múltiplos cliques
+            event.preventDefault();
+            newPostSubmitButton.disabled = true;
 
             fetch('/posts', {
                 method: 'POST',
@@ -39,16 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 newPostContent.value = '';
                 newPostError.innerHTML = '';
                 console.log(jsonResponse.message);
-                loadAllPosts(); // após sucesso, recarrega a página com o novo post
+                loadAllPosts();
             })
             .catch(error => {
-                newPostError.textContent = error.message; // exibe mensagem de erro
-                newPostSubmitButton.disabled = false; // reabilita para o usuário editar ou reenviar
+                newPostError.textContent = error.message;
+                newPostSubmitButton.disabled = false;
             });
         };
     }
 
-    // começa mostrando a primeira página (All Posts)
     loadAllPosts();
 });
 
@@ -68,7 +66,6 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Helpers simples para mostrar/esconder views via CSS (.hidden)
 function showView(selector) {
     document.querySelector(selector).classList.remove('hidden');
 }
@@ -93,7 +90,6 @@ function loadFeed(feed, page, username = '') {
         return response.json();
     })
     .then(data => {
-        // Renderiza os posts
         data.posts.forEach(post => {
             const postCard = document.createElement("div");
             postCard.className = "card post-card";
@@ -103,16 +99,16 @@ function loadFeed(feed, page, username = '') {
 
             const usernameEl = document.createElement("button");
             usernameEl.type = "button";
-            usernameEl.className = "card-title h5 mb-2 post-username-button";
+            usernameEl.className = "post-username-button";
             usernameEl.textContent = `@${post.poster}`;
             usernameEl.onclick = () => loadProfilePage(post.poster);
 
             const content = document.createElement("p");
-            content.className = "card-text my-2";
+            content.className = "post-content";
             content.textContent = post.content;
 
             const date = document.createElement("time");
-            date.className = "text-muted d-block mb-2 small";
+            date.className = "post-date";
             date.dateTime = post.created_at;
             date.textContent = new Date(post.created_at)
                 .toLocaleString("en-US", {
@@ -124,11 +120,11 @@ function loadFeed(feed, page, username = '') {
                 });
 
             const likeContainer = document.createElement("div");
-            likeContainer.className = "d-flex align-items-center";
+            likeContainer.className = "like-container";
 
-            // Ícone de Coração
             const likeButton = document.createElement("button");
-            likeButton.className = `btn btn-link p-0 text-decoration-none like-heart ${post.is_liked ? 'liked' : ''}`;
+            likeButton.type = "button";
+            likeButton.className = `like-heart ${post.is_liked ? 'liked' : ''}`;
             likeButton.textContent = post.is_liked ? "♥" : "♡";
 
             likeButton.onclick = () => {
@@ -151,12 +147,11 @@ function loadFeed(feed, page, username = '') {
                     post.is_liked = data.is_liked;
                     likeButton.classList.toggle('liked', data.is_liked);
                     likeButton.textContent = data.is_liked ? "♥" : "♡";
-                    likeButton.parentElement.querySelector('.like-count').textContent = data.likes;
+                    likeContainer.querySelector('.like-count').textContent = data.likes;
                 })
                 .catch(error => console.error(error));
             };
 
-            // Contador de Curtidas
             const likeCount = document.createElement("span");
             likeCount.className = "like-count";
             likeCount.textContent = post.likes;
@@ -167,14 +162,13 @@ function loadFeed(feed, page, username = '') {
             postsList.append(postCard);
         });
 
-        // Renderiza a Paginação
         const nav = document.createElement("nav");
         nav.setAttribute("aria-label", "Page navigation");
 
         const ul = document.createElement("ul");
-        ul.className = "pagination justify-content-center";
+        ul.className = "pagination feed-pagination-list";
 
-        // Botão Previous
+        // Previous
         const prevLi = document.createElement("li");
         prevLi.className = `page-item ${!data.has_previous ? "disabled" : ""}`;
 
@@ -190,7 +184,7 @@ function loadFeed(feed, page, username = '') {
         prevLi.append(prevButton);
         ul.append(prevLi);
 
-        // Números das Páginas
+        // números
         for (let i = 1; i <= data.num_pages; i++) {
             const li = document.createElement("li");
             li.className = `page-item ${i === data.page ? "active" : ""}`;
@@ -205,7 +199,7 @@ function loadFeed(feed, page, username = '') {
             ul.append(li);
         }
 
-        // Botão Next
+        // Next
         const nextLi = document.createElement("li");
         nextLi.className = `page-item ${!data.has_next ? "disabled" : ""}`;
 
@@ -227,7 +221,6 @@ function loadFeed(feed, page, username = '') {
     .catch(error => console.error(error));
 }
 
-// Carrega a view de "All Posts"
 function loadAllPosts() {
     hideView('#profile-page-view');
     showView('#all-posts-view');
@@ -237,7 +230,6 @@ function loadAllPosts() {
     loadFeed(feed, 1);
 }
 
-// Carrega a view de Perfil do Usuário
 function loadProfilePage(username) {
     hideView('#all-posts-view');
     showView('#profile-page-view');
@@ -262,8 +254,8 @@ function loadProfilePage(username) {
         container.innerHTML = `
             <div class="card-body profile-header">
                 <div>
-                    <h2 class="card-title mb-1 profile-username" id="profile-username"></h2>
-                    <div class="profile-stats text-muted">
+                    <h2 class="profile-username" id="profile-username"></h2>
+                    <div class="profile-stats">
                         <div class="profile-stat">
                             <span class="profile-stat-number" id="following-count"></span> Following
                         </div>
@@ -282,12 +274,12 @@ function loadProfilePage(username) {
 
         header.append(container);
 
-        // Lógica de Follow/Unfollow (somente se não for o próprio usuário)
         if (!data.is_me) {
             const btn = document.createElement('button');
+            btn.type = "button";
             btn.className = data.is_followed
-                ? 'btn btn-outline-secondary px-4'
-                : 'btn btn-primary px-4';
+                ? 'btn btn-outline-secondary profile-follow-button'
+                : 'btn btn-primary profile-follow-button';
             btn.textContent = data.is_followed ? 'Unfollow' : 'Follow';
 
             btn.onclick = () => {
@@ -311,8 +303,8 @@ function loadProfilePage(username) {
                     container.querySelector('#follower-count').textContent = toggleData.followers;
 
                     btn.className = toggleData.is_followed
-                        ? 'btn btn-outline-secondary px-4'
-                        : 'btn btn-primary px-4';
+                        ? 'btn btn-outline-secondary profile-follow-button'
+                        : 'btn btn-primary profile-follow-button';
                     btn.textContent = toggleData.is_followed ? 'Unfollow' : 'Follow';
                 })
                 .catch(error => console.error(error));
