@@ -47,6 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    navLinkUsername = document.querySelector('#nav-link-username')
+
+    if(navLinkUsername) {
+        navLinkUsername.onclick = event => {
+            event.preventDefault();
+            loadProfilePage(navLinkUsername.dataset.username);
+        };
+    }
+
     loadAllPosts();
 });
 
@@ -97,11 +106,14 @@ function loadFeed(feed, page, username = '') {
             const cardBody = document.createElement("div");
             cardBody.className = "card-body";
 
-            const usernameEl = document.createElement("button");
-            usernameEl.type = "button";
-            usernameEl.className = "post-username-button";
+            const usernameEl = document.createElement("a");
+            usernameEl.href = '#';
+            usernameEl.className = "post-username";
             usernameEl.textContent = `@${post.poster}`;
-            usernameEl.onclick = () => loadProfilePage(post.poster);
+            usernameEl.onclick = event => {
+                event.preventDefault();
+                loadProfilePage(post.poster);
+            };
 
             const content = document.createElement("p");
             content.className = "post-content";

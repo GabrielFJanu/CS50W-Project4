@@ -10,18 +10,15 @@
   margin: 0.75rem;
 }
 
-.post-username-button {
-  background: none;
-  border: none;
-  padding: 0;
-
+.post-username {
+  color: inherit;
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
-
-.post-username-button:focus {
-  outline: none;
+.post-username:hover {
+    color: inherit;
+    text-decoration: none;
 }
 
 .post-content {
