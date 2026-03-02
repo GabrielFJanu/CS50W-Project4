@@ -11,20 +11,17 @@
 }
 
 .post-username-button {
-  appearance: none;
-  -webkit-appearance: none;
   background: none;
   border: none;
   padding: 0;
-  margin: 0;
-  outline: none;
-  box-shadow: none;
 
-  /* tipografia e layout (antes era h5, mb-2 etc.) */
-  display: block;
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+}
+
+.post-username-button:focus {
+  outline: none;
 }
 
 .post-content {
@@ -44,18 +41,16 @@
 }
 
 .like-heart {
-  appearance: none;
-  -webkit-appearance: none;
   background: none;
   border: none;
   padding: 0;
-  margin: 0;
-  outline: none;
-  box-shadow: none;
 
   font-size: 1.4rem;
   color: #979797;
   line-height: 1;
+}
+.like-heart:focus {
+  outline: none;
 }
 
 .like-heart.liked {
