@@ -47,12 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    navLinkUsername = document.querySelector('#nav-link-username')
+    const navLinkUsername = document.querySelector('#nav-link-username')
 
     if(navLinkUsername) {
         navLinkUsername.onclick = event => {
             event.preventDefault();
             loadProfilePage(navLinkUsername.dataset.username);
+        };
+    }
+
+    const navLinkFollowing = document.querySelector('#nav-link-following')
+
+    if(navLinkFollowing) {
+        navLinkFollowing.onclick = event => {
+            event.preventDefault();
+            loadFollowing();
         };
     }
 
@@ -84,14 +93,24 @@ function hideView(selector) {
 }
 
 // Carrega o feed de posts (para All Posts ou Profile)
-function loadFeed(feed, page, username = '') {
+function loadFeed(feed, page, username = '', following = false) {
     const postsList = feed.querySelector('.posts-list');
     const feedPagination = feed.querySelector('.feed-pagination');
 
     postsList.innerHTML = '';
     feedPagination.innerHTML = '';
 
-    fetch(`/posts?page=${page}&username=${username}`)
+    let url = `/posts?page=${page}`;
+
+    if (username) {
+        url += `&username=${username}`;
+    }
+
+    if (following) {
+        url += `&following=1`;
+    }
+
+    fetch(url)
     .then(response => {
         if (!response.ok) {
             throw new Error("Failed to load posts");
@@ -190,7 +209,7 @@ function loadFeed(feed, page, username = '') {
         prevButton.textContent = "Previous";
         prevButton.disabled = !data.has_previous;
         if (data.has_previous) {
-            prevButton.onclick = () => loadFeed(feed, data.page - 1, username);
+            prevButton.onclick = () => loadFeed(feed, data.page - 1, username, following);
         }
 
         prevLi.append(prevButton);
@@ -205,7 +224,7 @@ function loadFeed(feed, page, username = '') {
             button.className = "page-link";
             button.type = "button";
             button.textContent = i;
-            button.onclick = () => loadFeed(feed, i, username);
+            button.onclick = () => loadFeed(feed, i, username, following);
 
             li.append(button);
             ul.append(li);
@@ -221,7 +240,7 @@ function loadFeed(feed, page, username = '') {
         nextButton.textContent = "Next";
         nextButton.disabled = !data.has_next;
         if (data.has_next) {
-            nextButton.onclick = () => loadFeed(feed, data.page + 1, username);
+            nextButton.onclick = () => loadFeed(feed, data.page + 1, username, following);
         }
 
         nextLi.append(nextButton);
@@ -234,8 +253,9 @@ function loadFeed(feed, page, username = '') {
 }
 
 function loadAllPosts() {
-    hideView('#profile-page-view');
     showView('#all-posts-view');
+    hideView('#profile-page-view');
+    hideView('#following-view');
 
     const view = document.querySelector('#all-posts-view');
     const feed = view.querySelector('.feed');
@@ -245,6 +265,7 @@ function loadAllPosts() {
 function loadProfilePage(username) {
     hideView('#all-posts-view');
     showView('#profile-page-view');
+    hideView('#following-view');
 
     const view = document.querySelector('#profile-page-view');
     const feed = view.querySelector('.feed');
@@ -328,4 +349,15 @@ function loadProfilePage(username) {
         loadFeed(feed, 1, data.username);
     })
     .catch(error => console.error(error));
+}
+
+function loadFollowing(){
+    hideView('#all-posts-view');
+    hideView('#profile-page-view');
+    showView('#following-view');
+
+    const view = document.querySelector('#following-view');
+    const feed = view.querySelector('.feed');
+
+    loadFeed(feed, 1, '', true);
 }

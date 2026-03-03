@@ -5,10 +5,10 @@
 
     <!-- All posts -->
      <div id="all-posts-view">
-        <h1 class="m-2" >All Posts</h1>
+        <h1 class="page-header" >All Posts</h1>
         {% if user.is_authenticated %}
         <!-- New Post -->
-        <div class="card m-4">
+        <div class="card post-card">
             <div class="card-body">
                 <h3 class="card-title">New Post</h3>
                 <form id="new-post-form">
@@ -40,6 +40,19 @@
      <div id="profile-page-view">
         <!-- Profile info header -->
         <div id="profile-info-header"></div>
+        <!-- Feed -->
+        <div class="feed">
+            <!-- Posts list -->
+            <div class="posts-list"></div>
+            <!-- Feed pagination -->
+            <div class="feed-pagination"></div>
+        </div>
+     </div>
+
+     <!-- Following -->
+     <div id="following-view">
+        <!-- Following header -->
+        <h1 class="page-header" >Following</h1>
         <!-- Feed -->
         <div class="feed">
             <!-- Posts list -->

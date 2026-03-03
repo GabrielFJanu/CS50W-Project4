@@ -2,6 +2,10 @@
   display: none !important;
 }
 
+.page-header {
+    margin: 0.75rem;
+}
+
 .post-card {
   margin: 1.5rem;
 }

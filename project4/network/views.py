@@ -84,11 +84,20 @@ def posts(request):
     if request.method == "GET":
 
         username = request.GET.get("username")
+        following = request.GET.get("following")
+
+        posts = Post.objects.all()
+
+        if following:
+            if not request.user.is_authenticated:
+                return JsonResponse({"error": "Login required."}, status=403)
+            
+            posts = posts.filter(poster__in=request.user.following.all())
 
         if username:
-            posts = Post.objects.filter(poster__username=username).order_by("-created_at")
-        else:
-            posts = Post.objects.all().order_by("-created_at")
+            posts = posts.filter(poster__username=username)
+
+        posts = posts.order_by("-created_at")
 
         paginator = Paginator(posts, 10)
 
