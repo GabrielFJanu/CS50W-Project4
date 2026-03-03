@@ -11,6 +11,41 @@ from .models import User, Post
 
 # APIs
 @require_http_methods(["PUT"])
+def update_post(request, post_id):
+
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Login required."}, status=403)
+    
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({"error": "Post not found."}, status=404)
+    
+    if post.poster != request.user:
+        return JsonResponse({"error": "You can only edit your own posts."}, status=403) # 403 é mais apropriado que 400 aqui
+    
+    try:
+        body = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON."}, status=400)
+    
+    content = body.get("content", "").strip()
+
+    if not content:
+        return JsonResponse({"error": "Content cannot be empty."}, status=400)
+
+    if len(content) > 280:
+        return JsonResponse({"error": "Post cannot exceed 280 characters."}, status=400)
+
+    post.content = content
+    post.save()
+
+    return JsonResponse({
+        "message": "Post edited successfully.",
+        "content": post.content
+    }, status=200)
+    
+@require_http_methods(["PUT"])
 def toggle_follow(request, username):
 
     if not request.user.is_authenticated:
