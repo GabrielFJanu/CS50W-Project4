@@ -108,6 +108,7 @@ def posts(request):
         for post in page_obj:
             p = post.serialize()
             p["is_liked"] = request.user.is_authenticated and post.likes.filter(id=request.user.id).exists()
+            p["is_owner"] = request.user.is_authenticated and (post.poster == request.user)
             posts_data.append(p)
 
         response = {

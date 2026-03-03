@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(jsonResponse => {
                 newPostContent.value = '';
-                newPostError.innerHTML = '';
+                newPostError.textContent = '';
                 console.log(jsonResponse.message);
                 loadAllPosts();
             })
@@ -188,7 +188,91 @@ function loadFeed(feed, page, username = '', following = false) {
             likeCount.textContent = post.likes;
 
             likeContainer.append(likeButton, likeCount);
-            cardBody.append(usernameEl, content, date, likeContainer);
+            cardBody.append(usernameEl, content);
+
+            if (post.is_owner) {
+                const editButton = document.createElement("button");
+                editButton.type = "button";
+                editButton.className = "btn btn-link post-edit-button";
+                editButton.textContent = "Edit";
+
+                const editPostForm = document.createElement("form");
+                editPostForm.className = 'edit-post-form';
+                editPostForm.innerHTML = `
+                    <div class="form-group">
+                        <textarea 
+                            class="form-control edit-post-content"  
+                            rows="3"
+                            maxlength="280"></textarea>
+                        <div class="edit-post-error"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary edit-post-submit-button">
+                        Save
+                    </button>`;
+                editPostForm.classList.add('hidden');
+
+                const editPostContent = editPostForm.querySelector('.edit-post-content');
+                const editPostSubmitButton = editPostForm.querySelector('.edit-post-submit-button');
+                const editPostError = editPostForm.querySelector('.edit-post-error');
+
+                editButton.onclick = () => {
+                    editPostContent.value = content.textContent;
+                    editPostContent.focus();
+                    editPostError.textContent = '';
+                    editPostSubmitButton.disabled = false;
+
+                    content.classList.add('hidden');
+                    editButton.classList.add('hidden');
+                    editPostForm.classList.remove('hidden');
+                };
+
+                editPostContent.oninput = () => {
+                    editPostSubmitButton.disabled = !editPostContent.value.trim();
+                };
+
+                editPostForm.onsubmit = event => {
+                    event.preventDefault();
+                    editPostSubmitButton.disabled = true;
+
+                    fetch(`/posts/${post.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            content: editPostContent.value.trim(),
+                        })
+                    })
+                    .then(response => {
+                        return response.json().then(json => {
+                            if (!response.ok) {
+                                throw new Error(json.error);
+                            }
+                            return json;
+                        });
+                    })
+                    .then(jsonResponse => {
+                        content.textContent = jsonResponse.content;
+                        editPostError.textContent = '';
+
+                        content.classList.remove('hidden');
+                        editButton.classList.remove('hidden');
+                        editPostForm.classList.add('hidden');
+
+                        console.log(jsonResponse.message);
+                    })
+                    .catch(error => {
+                        editPostError.textContent = error.message;
+                        editPostSubmitButton.disabled = false;
+                    });
+                };
+
+                cardBody.append(editButton, editPostForm);
+            }
+
+            cardBody.append(date, likeContainer);
+
             postCard.append(cardBody);
             postsList.append(postCard);
         });
