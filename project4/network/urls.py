@@ -11,8 +11,8 @@ urlpatterns = [
     path("register", views.register, name="register"),
     #APIs
     path("posts", views.posts, name="posts"),
-    path("posts/<int:post_id>", views.update_post, name="update_post"),
-    path("posts/<int:post_id>/toggle_like", views.toggle_like, name="toggle_like"),
+    path("posts/<int:post_id>", views.post, name="post"),
+    path("posts/<int:post_id>/likes", views.post_likes, name="post_likes"),
     path("users/<str:username>", views.user_profile, name="user_profile"),
-    path("users/<str:username>/toggle_follow", views.toggle_follow, name="user_follow"),
+    path("users/<str:username>/followers", views.user_followers, name="user_followers"),
 ]

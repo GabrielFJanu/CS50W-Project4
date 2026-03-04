@@ -159,8 +159,8 @@ function loadFeed(feed, page, username = '', following = false) {
             likeButton.textContent = post.is_liked ? "♥" : "♡";
 
             likeButton.onclick = () => {
-                fetch(`/posts/${post.id}/toggle_like`, {
-                    method: "PUT",
+                fetch(`/posts/${post.id}/likes`, {
+                    method: post.is_liked? "DELETE": "PUT",
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRFToken": getCookie("csrftoken")
@@ -400,8 +400,8 @@ function loadProfilePage(username) {
             btn.textContent = data.is_followed ? 'Unfollow' : 'Follow';
 
             btn.onclick = () => {
-                fetch(`/users/${username}/toggle_follow`, {
-                    method: "PUT",
+                fetch(`/users/${username}/followers`, {
+                    method: data.is_followed? "DELETE" : "PUT",
                     headers: {
                         "Content-Type": "application/json",
                         "X-CSRFToken": getCookie("csrftoken")
@@ -416,6 +416,7 @@ function loadProfilePage(username) {
                     });
                 })
                 .then(toggleData => {
+                    data.is_followed = toggleData.is_followed;
                     container.querySelector('#following-count').textContent = toggleData.following;
                     container.querySelector('#follower-count').textContent = toggleData.followers;
 

@@ -11,7 +11,7 @@ from .models import User, Post
 
 # APIs
 @require_http_methods(["PUT"])
-def update_post(request, post_id):
+def post(request, post_id):
 
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Login required."}, status=403)
@@ -45,8 +45,8 @@ def update_post(request, post_id):
         "content": post.content
     }, status=200)
     
-@require_http_methods(["PUT"])
-def toggle_follow(request, username):
+@require_http_methods(["PUT", "DELETE"])
+def user_followers(request, username):
 
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Login required."}, status=403)
@@ -61,16 +61,18 @@ def toggle_follow(request, username):
     
     already_followed = request.user.following.filter(id=user.id).exists()
 
-    if already_followed:
-        request.user.following.remove(user)
-        is_followed = False
-    else:
-        request.user.following.add(user)
+    if request.method == "PUT":
+        if not already_followed:
+            request.user.following.add(user)
         is_followed = True
+
+    else: # DELETE
+        if already_followed:
+            request.user.following.remove(user)
+        is_followed = False
 
     response = user.serialize()
     response["is_followed"] = is_followed
-
     return JsonResponse(response, status=200)
 
 
@@ -89,8 +91,8 @@ def user_profile(request, username):
     return JsonResponse(response, status=200)
 
 
-@require_http_methods(["PUT"])
-def toggle_like(request, post_id):
+@require_http_methods(["PUT", "DELETE"])
+def post_likes(request, post_id):
 
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Login required."}, status=403)
@@ -102,12 +104,15 @@ def toggle_like(request, post_id):
 
     already_liked = post.likes.filter(id=request.user.id).exists()
 
-    if already_liked:
-        post.likes.remove(request.user)
-        is_liked = False
-    else:
-        post.likes.add(request.user)
+    if request.method == "PUT":
+        if not already_liked:
+            post.likes.add(request.user)
         is_liked = True
+
+    else: # DELETE
+        if already_liked:
+            post.likes.remove(request.user)
+        is_liked = False
 
     return JsonResponse({
         "likes": post.likes.count(),
@@ -156,7 +161,7 @@ def posts(request):
 
         return JsonResponse(response, status=200)
     
-    elif request.method == "POST":
+    else: # POST
         
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Login required."}, status=403)
