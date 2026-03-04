@@ -138,6 +138,8 @@ function loadFeed(feed, page, username = '', following = false) {
             content.className = "post-content";
             content.textContent = post.content;
 
+            cardBody.append(usernameEl, content);
+
             const date = document.createElement("time");
             date.className = "post-date";
             date.dateTime = post.created_at;
@@ -149,46 +151,8 @@ function loadFeed(feed, page, username = '', following = false) {
                     hour: "numeric",
                     minute: "2-digit"
                 });
-
-            const likeContainer = document.createElement("div");
-            likeContainer.className = "like-container";
-
-            const likeButton = document.createElement("button");
-            likeButton.type = "button";
-            likeButton.className = `like-heart ${post.is_liked ? 'liked' : ''}`;
-            likeButton.textContent = post.is_liked ? "♥" : "♡";
-
-            likeButton.onclick = () => {
-                fetch(`/posts/${post.id}/likes`, {
-                    method: post.is_liked? "DELETE": "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": getCookie("csrftoken")
-                    }
-                })
-                .then(response => {
-                    return response.json().then(json => {
-                        if (!response.ok) {
-                            throw new Error(json.error);
-                        }
-                        return json;
-                    });
-                })
-                .then(data => {
-                    post.is_liked = data.is_liked;
-                    likeButton.classList.toggle('liked', data.is_liked);
-                    likeButton.textContent = data.is_liked ? "♥" : "♡";
-                    likeContainer.querySelector('.like-count').textContent = data.likes;
-                })
-                .catch(error => console.error(error));
-            };
-
-            const likeCount = document.createElement("span");
-            likeCount.className = "like-count";
-            likeCount.textContent = post.likes;
-
-            likeContainer.append(likeButton, likeCount);
-            cardBody.append(usernameEl, content);
+            
+            cardBody.append(date);
 
             if (post.is_owner) {
                 const editButton = document.createElement("button");
@@ -271,7 +235,47 @@ function loadFeed(feed, page, username = '', following = false) {
                 cardBody.append(editButton, editPostForm);
             }
 
-            cardBody.append(date, likeContainer);
+            if (post.is_authenticated){
+                const likeContainer = document.createElement("div");
+                likeContainer.className = "like-container";
+
+                const likeButton = document.createElement("button");
+                likeButton.type = "button";
+                likeButton.className = `like-heart ${post.is_liked ? 'liked' : ''}`;
+                likeButton.textContent = post.is_liked ? "♥" : "♡";
+
+                likeButton.onclick = () => {
+                    fetch(`/posts/${post.id}/likes`, {
+                        method: post.is_liked? "DELETE": "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCookie("csrftoken")
+                        }
+                    })
+                    .then(response => {
+                        return response.json().then(json => {
+                            if (!response.ok) {
+                                throw new Error(json.error);
+                            }
+                            return json;
+                        });
+                    })
+                    .then(data => {
+                        post.is_liked = data.is_liked;
+                        likeButton.classList.toggle('liked', data.is_liked);
+                        likeButton.textContent = data.is_liked ? "♥" : "♡";
+                        likeContainer.querySelector('.like-count').textContent = data.likes;
+                    })
+                    .catch(error => console.error(error));
+                };
+
+                const likeCount = document.createElement("span");
+                likeCount.className = "like-count";
+                likeCount.textContent = post.likes;
+
+                likeContainer.append(likeButton, likeCount);
+                cardBody.append(likeContainer);
+            }
 
             postCard.append(cardBody);
             postsList.append(postCard);
@@ -391,7 +395,7 @@ function loadProfilePage(username) {
 
         header.append(container);
 
-        if (!data.is_me) {
+        if (data.is_authenticated && !data.is_me) {
             const btn = document.createElement('button');
             btn.type = "button";
             btn.className = data.is_followed

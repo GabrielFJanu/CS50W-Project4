@@ -85,6 +85,7 @@ def user_profile(request, username):
         return JsonResponse({"error": "User not found."}, status=404)
     
     response = user.serialize()
+    response["is_authenticated"] = request.user.is_authenticated
     response["is_followed"] = request.user.is_authenticated and request.user.following.filter(pk=user.id).exists()
     response["is_me"] = request.user.is_authenticated and user == request.user
 
@@ -147,6 +148,7 @@ def posts(request):
         posts_data = []
         for post in page_obj:
             p = post.serialize()
+            p["is_authenticated"] = request.user.is_authenticated
             p["is_liked"] = request.user.is_authenticated and post.likes.filter(id=request.user.id).exists()
             p["is_owner"] = request.user.is_authenticated and (post.poster == request.user)
             posts_data.append(p)
